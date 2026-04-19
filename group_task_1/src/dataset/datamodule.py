@@ -8,23 +8,51 @@ import ast
 from typing import Optional, Dict, Any, Tuple
 
 class PrecomputedASRDataset(Dataset):
-    def __init__(self, csv_path: str, is_train: bool = True):
+    def __init__(self, csv_path: str, is_train: bool = True, sample_rate: int = 16000, 
+                 n_mels: int = 80, n_fft: int = 400, hop_length: int = 160):
         self.df = pd.read_csv(csv_path)
         self.is_train = is_train
+        
+        self.mel_transform = torchaudio.transforms.MelSpectrogram(
+            sample_rate=sample_rate,
+            n_mels=n_mels,
+            n_fft=n_fft,
+            hop_length=hop_length
+        )
         
         # SpecAugment for training data
         if self.is_train:
             self.freq_mask = torchaudio.transforms.FrequencyMasking(freq_mask_param=15)
             self.time_mask = torchaudio.transforms.TimeMasking(time_mask_param=35)
             
+    def _add_noise(self, waveform: torch.Tensor) -> torch.Tensor:
+        noise = torch.randn_like(waveform) * 0.005
+        return waveform + noise
+        
     def __len__(self):
         return len(self.df)
         
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, int, int]:
         row = self.df.iloc[idx]
         
-        # Load precomputed Mel spectrogram
-        mel_spec = torch.load(row['tensor_path'])
+        # Load 1D waveform
+        waveform = torch.load(row['tensor_path'])
+        
+        if self.is_train:
+            # Apply time-domain augmentations (noise, random scaling)
+            # Add Gaussian noise
+            if torch.rand(1).item() > 0.5:
+                waveform = self._add_noise(waveform)
+                
+            # Random volume scaling
+            if torch.rand(1).item() > 0.5:
+                scale = 0.5 + torch.rand(1).item() # 0.5 to 1.5
+                waveform = waveform * scale
+                
+        # Compute Mel Spectrogram
+        mel_spec = self.mel_transform(waveform)
+        # Log scale
+        mel_spec = torch.log(mel_spec + 1e-9)
         
         # Apply SpecAugment if training
         if self.is_train:
@@ -82,8 +110,22 @@ class ASRDataModule(pl.LightningDataModule):
         
     def setup(self, stage: Optional[str] = None):
         if stage == 'fit' or stage is None:
-            self.train_dataset = PrecomputedASRDataset(self.train_csv, is_train=True)
-            self.val_dataset = PrecomputedASRDataset(self.dev_csv, is_train=False)
+            self.train_dataset = PrecomputedASRDataset(
+                str(self.train_csv), 
+                is_train=True,
+                sample_rate=self.config.dataset.sample_rate,
+                n_mels=self.config.dataset.n_mels,
+                n_fft=self.config.dataset.n_fft,
+                hop_length=self.config.dataset.hop_length
+            )
+            self.val_dataset = PrecomputedASRDataset(
+                str(self.dev_csv), 
+                is_train=False,
+                sample_rate=self.config.dataset.sample_rate,
+                n_mels=self.config.dataset.n_mels,
+                n_fft=self.config.dataset.n_fft,
+                hop_length=self.config.dataset.hop_length
+            )
 
     def train_dataloader(self):
         return DataLoader(

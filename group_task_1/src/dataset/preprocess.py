@@ -18,10 +18,9 @@ def text_to_sequence(text: str) -> list[int]:
 def process_audio(
     audio_path: Path, 
     target_path: Path, 
-    sample_rate: int, 
-    mel_transform: torchaudio.transforms.MelSpectrogram
+    sample_rate: int
 ):
-    """Load audio, resample, compute mel spectrogram, and save to disk."""
+    """Load audio, resample, and save raw waveform to disk."""
     import soundfile as sf
     data, sr = sf.read(str(audio_path))
     waveform = torch.tensor(data).float()
@@ -39,27 +38,14 @@ def process_audio(
     if waveform.shape[0] > 1:
         waveform = torch.mean(waveform, dim=0, keepdim=True)
         
-    # Compute Mel spectrogram
-    mel_spec = mel_transform(waveform)
-    # Convert to log scale (adding a small epsilon to avoid log(0))
-    log_mel_spec = torch.log(mel_spec + 1e-9)
-    
-    # Save the tensor
-    torch.save(log_mel_spec.squeeze(0), target_path)
+    # Save the 1D waveform tensor directly instead of Mel spectrogram
+    torch.save(waveform.squeeze(0), target_path)
 
-def preprocess_dataset(csv_path: str, output_dir_str: str, sample_rate: int = 16000, n_mels: int = 80):
+def preprocess_dataset(csv_path: str, output_dir_str: str, sample_rate: int = 16000):
     df = pd.read_csv(csv_path)
     base_dir = Path("data")
     output_dir = Path(output_dir_str)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Initialize MelTransform
-    mel_transform = torchaudio.transforms.MelSpectrogram(
-        sample_rate=sample_rate,
-        n_mels=n_mels,
-        n_fft=400,
-        hop_length=160
-    )
     
     new_data = []
     
@@ -78,7 +64,7 @@ def preprocess_dataset(csv_path: str, output_dir_str: str, sample_rate: int = 16
         target_path = target_dir / tensor_filename
         
         try:
-            process_audio(audio_path, target_path, sample_rate, mel_transform)
+            process_audio(audio_path, target_path, sample_rate)
             
             # Save new row information
             new_row = row.to_dict()
@@ -110,9 +96,8 @@ if __name__ == "__main__":
     parser.add_argument("--dev_csv", default="data/dev.csv")
     parser.add_argument("--out_dir", default="data/preprocessed")
     parser.add_argument("--sr", type=int, default=16000)
-    parser.add_argument("--n_mels", type=int, default=80)
     
     args = parser.parse_args()
     
-    preprocess_dataset(args.train_csv, args.out_dir, args.sr, args.n_mels)
-    preprocess_dataset(args.dev_csv, args.out_dir, args.sr, args.n_mels)
+    preprocess_dataset(args.train_csv, args.out_dir, args.sr)
+    preprocess_dataset(args.dev_csv, args.out_dir, args.sr)
