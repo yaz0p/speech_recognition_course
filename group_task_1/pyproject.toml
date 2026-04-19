@@ -16,4 +16,5 @@ dependencies = [
     "tqdm>=4.66.0",
     "soundfile>=0.12.1",
     "editdistance>=0.8.1",
+    "audiomentations>=0.35.0",
 ]
