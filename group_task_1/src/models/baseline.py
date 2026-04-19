@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from src.models.base import BaseASRModel
+
 class ResidualConvBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, dropout: float = 0.2):
         super().__init__()
@@ -36,7 +38,7 @@ class ResidualConvBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class BaselineCRNN(nn.Module):
+class BaselineCRNN(BaseASRModel):
     """
     A lightweight Convolutional Recurrent Neural Network (CRNN) for ASR.
     Designed to be < 5M parameters.
@@ -103,9 +105,6 @@ class BaselineCRNN(nn.Module):
         log_probs = nn.functional.log_softmax(logits, dim=-1)
         
         return log_probs, output_lengths
-        
-    def get_num_params(self):
-        return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 if __name__ == "__main__":
     model = BaselineCRNN()

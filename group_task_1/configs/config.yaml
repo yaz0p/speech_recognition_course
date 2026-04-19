@@ -18,8 +18,8 @@ model:
   dropout: 0.2
 
 training:
-  learning_rate: 0.0003
-  weight_decay: 0.00001
+  learning_rate: "3e-4"
+  weight_decay: "1e-5"
   max_epochs: 50
   patience: 10
   gradient_clip_val: 1.0

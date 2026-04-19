@@ -1,6 +1,6 @@
 import yaml
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union, Any
 
 @dataclass
 class DatasetConfig:
@@ -25,8 +25,8 @@ class ModelConfig:
 
 @dataclass
 class TrainingConfig:
-    learning_rate: float
-    weight_decay: float
+    learning_rate: Any
+    weight_decay: Any
     max_epochs: int
     patience: int
     gradient_clip_val: float
@@ -34,6 +34,17 @@ class TrainingConfig:
     devices: int
     accelerator: str
     strategy: str
+
+    def __post_init__(self):
+        if isinstance(self.learning_rate, str):
+            self.learning_rate = float(str(self.learning_rate))
+        elif isinstance(self.learning_rate, (int, float)):
+            self.learning_rate = float(self.learning_rate)
+            
+        if isinstance(self.weight_decay, str):
+            self.weight_decay = float(str(self.weight_decay))
+        elif isinstance(self.weight_decay, (int, float)):
+            self.weight_decay = float(self.weight_decay)
 
 @dataclass
 class LoggingConfig:
