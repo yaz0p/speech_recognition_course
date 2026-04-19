@@ -30,3 +30,4 @@ submit:
 		exit 1; \
 	fi
 	.venv/bin/python submission.py --config $(CONFIG) --ckpt $(CKPT)
+
