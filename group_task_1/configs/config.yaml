@@ -1,0 +1,36 @@
+dataset:
+  train_csv: "data/train.csv"
+  dev_csv: "data/dev.csv"
+  test_csv: "data/test.csv"
+  preprocessed_dir: "data/preprocessed"
+  sample_rate: 16000
+  n_mels: 80
+  n_fft: 400
+  hop_length: 160
+  num_workers: 4
+  batch_size: 128
+  normalize: true  # per-utterance CMVN on log-mel
+
+model:
+  name: "baseline_crnn"
+  vocab_size: 11 # 0-9 digits + 1 blank token for CTC
+  hidden_size: 256
+  num_layers: 3
+  dropout: 0.2
+
+training:
+  learning_rate: 5.0e-4
+  weight_decay: 1.0e-5
+  max_epochs: 50
+  patience: 50
+  warmup_steps: 25
+  gradient_clip_val: 1.0
+  precision: "32-true"
+  devices: "auto"
+  accelerator: "auto"
+  strategy: "auto"
+
+logging:
+  project_name: "asr-spoken-numbers"
+  experiment_name: "baseline_crnn_run2"
+  save_dir: "checkpoints/"

@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+src/__init__.py
+src/dataset/__init__.py
+src/group_task_1.egg-info/PKG-INFO
+src/group_task_1.egg-info/SOURCES.txt
+src/group_task_1.egg-info/dependency_links.txt
+src/group_task_1.egg-info/requires.txt
+src/group_task_1.egg-info/top_level.txt
+src/models/__init__.py
+src/submission/__init__.py
+src/train/__init__.py
+src/utils/__init__.py
