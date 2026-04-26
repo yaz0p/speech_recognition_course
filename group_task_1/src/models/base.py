@@ -1,33 +1,31 @@
-import torch
-import torch.nn as nn
 from abc import ABC, abstractmethod
 
+import torch
+from torch import nn
+
+
 class BaseASRModel(nn.Module, ABC):
-    """
-    Abstract base class for all ASR models in the project.
-    All models must inherit from this class and implement the abstract methods.
-    """
+    """Abstract base class for all ASR models in the project."""
+
     def __init__(self):
         super().__init__()
-        
+
     @abstractmethod
-    def forward(self, x: torch.Tensor, lengths: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor, lengths: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass of the model.
-        
+
         Args:
-            x: Tensor of shape [batch, channels/features, time] containing input features (e.g. Mel specs)
-            lengths: Tensor of shape [batch] containing sequence lengths for each element in the batch
-            
+            x: [batch, channels/features, time] input features (e.g. Mel specs)
+            lengths: [batch] sequence lengths for each element in the batch
+
         Returns:
-            log_probs: Tensor of shape [batch, time, vocab_size] containing log softmax probabilities for CTC
-            output_lengths: Tensor of shape [batch] containing the valid sequence lengths after any downsampling in the model
+            log_probs: [batch, time, vocab_size] log softmax probabilities for CTC
+            output_lengths: [batch] valid sequence lengths after downsampling
         """
-        pass
-        
+
     def get_num_params(self) -> int:
-        """
-        Returns the number of trainable parameters in the model.
-        Used to ensure the model satisfies the < 5M parameters constraint.
-        """
+        """Return the number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)

@@ -1,6 +1,8 @@
-import yaml
 from dataclasses import dataclass
-from typing import Optional, Union, Any
+from pathlib import Path
+
+import yaml
+
 
 @dataclass
 class DatasetConfig:
@@ -14,6 +16,8 @@ class DatasetConfig:
     hop_length: int
     num_workers: int
     batch_size: int
+    normalize: bool = True
+
 
 @dataclass
 class ModelConfig:
@@ -23,34 +27,27 @@ class ModelConfig:
     num_layers: int
     dropout: float
 
+
 @dataclass
 class TrainingConfig:
-    learning_rate: Any
-    weight_decay: Any
+    learning_rate: float
+    weight_decay: float
     max_epochs: int
     patience: int
     gradient_clip_val: float
     precision: str
-    devices: int
+    devices: int | str
     accelerator: str
     strategy: str
+    warmup_steps: int = 0
 
-    def __post_init__(self):
-        if isinstance(self.learning_rate, str):
-            self.learning_rate = float(str(self.learning_rate))
-        elif isinstance(self.learning_rate, (int, float)):
-            self.learning_rate = float(self.learning_rate)
-            
-        if isinstance(self.weight_decay, str):
-            self.weight_decay = float(str(self.weight_decay))
-        elif isinstance(self.weight_decay, (int, float)):
-            self.weight_decay = float(self.weight_decay)
 
 @dataclass
 class LoggingConfig:
     project_name: str
     experiment_name: str
     save_dir: str
+
 
 @dataclass
 class Config:
@@ -61,12 +58,12 @@ class Config:
 
     @classmethod
     def load(cls, path: str) -> "Config":
-        with open(path, "r") as f:
+        with Path(path).open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        
+
         return cls(
             dataset=DatasetConfig(**data["dataset"]),
             model=ModelConfig(**data["model"]),
             training=TrainingConfig(**data["training"]),
-            logging=LoggingConfig(**data["logging"])
+            logging=LoggingConfig(**data["logging"]),
         )
